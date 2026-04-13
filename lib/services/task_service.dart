@@ -5,6 +5,7 @@ class TaskService {
   final CollectionReference tasks =
       FirebaseFirestore.instance.collection('tasks');
 
+  // CREATE
   Future<void> addTask(String title) async {
     if (title.trim().isEmpty) return;
 
@@ -16,6 +17,7 @@ class TaskService {
     });
   }
 
+  // READ
   Stream<List<Task>> streamTasks() {
     return tasks.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -27,16 +29,19 @@ class TaskService {
     });
   }
 
+  // UPDATE 
   Future<void> toggleTask(Task task) async {
     await tasks.doc(task.id).update({
       'isCompleted': !task.isCompleted,
     });
   }
 
+  // DELETE
   Future<void> deleteTask(String id) async {
     await tasks.doc(id).delete();
   }
 
+  // UPDATE SUBTASKS
   Future<void> updateSubtasks(
       String taskId, List<Map<String, dynamic>> subtasks) async {
     await tasks.doc(taskId).update({
