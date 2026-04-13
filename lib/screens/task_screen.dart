@@ -21,7 +21,13 @@ class _TaskScreenState extends State<TaskScreen> {
 
   void _addTask() {
     final title = _taskController.text.trim();
-    if (title.isEmpty) return;
+
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Task cannot be empty")),
+      );
+      return;
+    }
 
     _taskService.addTask(title);
     _taskController.clear();
@@ -30,7 +36,10 @@ class _TaskScreenState extends State<TaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Task Manager")),
+      appBar: AppBar(
+        title: const Text("Task Manager"),
+        centerTitle: true,
+      ),
       body: Column(
         children: [
           // INPUT
@@ -41,10 +50,13 @@ class _TaskScreenState extends State<TaskScreen> {
                 Expanded(
                   child: TextField(
                     controller: _taskController,
-                    decoration:
-                        const InputDecoration(hintText: "Enter task..."),
+                    decoration: const InputDecoration(
+                      hintText: "Enter task...",
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: _addTask,
                   child: const Text("Add"),
@@ -53,33 +65,119 @@ class _TaskScreenState extends State<TaskScreen> {
             ),
           ),
 
-          // LIST
+          // TASK LIST
           Expanded(
             child: StreamBuilder<List<Task>>(
               stream: _taskService.streamTasks(),
               builder: (context, snapshot) {
+                // loading
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                // error
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Error loading tasks"));
+                }
+
                 final tasks = snapshot.data ?? [];
 
+                // empty
+                if (tasks.isEmpty) {
+                  return const Center(
+                    child: Text("No tasks yet. Add one above!"),
+                  );
+                }
+
+                // data
                 return ListView.builder(
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final task = tasks[index];
 
-                    return ListTile(
-                      title: Text(task.title),
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      child: ExpansionTile(
+                        title: Text(
+                          task.title,
+                          style: TextStyle(
+                            decoration: task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                        ),
 
-                      // CHECKBOX
-                      leading: Checkbox(
-                        value: task.isCompleted,
-                        onChanged: (_) =>
-                            _taskService.toggleTask(task),
-                      ),
+                        // TASK CHECKBOX
+                        leading: Checkbox(
+                          value: task.isCompleted,
+                          onChanged: (_) =>
+                              _taskService.updateTask(task),
+                        ),
 
-                      // DELETE
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () =>
-                            _taskService.deleteTask(task.id),
+                        // DELETE TASK
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () =>
+                              _taskService.deleteTask(task.id),
+                        ),
+
+                        children: [
+                          // SUBTASK LIST WITH CHECKBOXES
+                          ...List.generate(task.subtasks.length, (i) {
+                            final subtask = task.subtasks[i];
+
+                            return ListTile(
+                              leading: Checkbox(
+                                value: subtask['done'] ?? false,
+                                onChanged: (value) {
+                                  final updatedSubtasks =
+                                      List<Map<String, dynamic>>.from(
+                                          task.subtasks);
+
+                                  updatedSubtasks[i]['done'] = value;
+
+                                  _taskService.updateSubtasks(
+                                      task.id, updatedSubtasks);
+                                },
+                              ),
+                              title: Text(
+                                subtask['title'] ?? '',
+                                style: TextStyle(
+                                  decoration:
+                                      (subtask['done'] ?? false)
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                ),
+                              ),
+                            );
+                          }),
+
+                          // ADD SUBTASK
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                hintText: "Add subtask...",
+                                border: OutlineInputBorder(),
+                              ),
+                              onSubmitted: (value) {
+                                if (value.trim().isEmpty) return;
+
+                                final updatedSubtasks =
+                                    List<Map<String, dynamic>>.from(
+                                        task.subtasks)
+                                      ..add({
+                                        'title': value.trim(),
+                                        'done': false,
+                                      });
+
+                                _taskService.updateSubtasks(
+                                    task.id, updatedSubtasks);
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },

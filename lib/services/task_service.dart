@@ -17,9 +17,9 @@ class TaskService {
     });
   }
 
-  // READ
+  // READ (REAL-TIME STREAM)
   Stream<List<Task>> streamTasks() {
-    return tasks.snapshots().map((snapshot) {
+    return tasks.orderBy('createdAt').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         return Task.fromMap(
           doc.id,
@@ -29,8 +29,8 @@ class TaskService {
     });
   }
 
-  // UPDATE 
-  Future<void> toggleTask(Task task) async {
+  // UPDATE (TOGGLE COMPLETE)
+  Future<void> updateTask(Task task) async {
     await tasks.doc(task.id).update({
       'isCompleted': !task.isCompleted,
     });
