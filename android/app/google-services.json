@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "500875522733",
+    "project_id": "sanaa-task-manager-cw",
+    "storage_bucket": "sanaa-task-manager-cw.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500875522733:android:1762c5648f13388c52cc24",
+        "android_client_info": {
+          "package_name": "com.example.task_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChsz_MMb8V_rtjpvqNi0trXAJojaBOLU0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
